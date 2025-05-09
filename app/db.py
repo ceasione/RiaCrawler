@@ -7,6 +7,9 @@ from crawler import AdDto
 from typing import List
 from sqlalchemy.exc import IntegrityError
 import logging
+import subprocess
+import os
+from datetime import datetime
 
 
 Base = declarative_base()
@@ -47,7 +50,8 @@ class Ticket(Base):
 class Database:
 
     def __init__(self, db_url):
-        self.engine = create_engine(db_url)
+        self.url = db_url
+        self.engine = create_engine(self.url)
         self.Session = sessionmaker(self.engine, autoflush=False, autocommit=False)
         Base.metadata.create_all(bind=self.engine)
 
@@ -66,5 +70,17 @@ class Database:
             return session.query(Ticket).all()
 
     def dump(self):
-        # TODO implement
-        pass
+        dump_path = f'../dumps/dump_{str(datetime.now())}.sql'
+        os.makedirs(os.path.dirname(dump_path), exist_ok=True)
+
+        cmd = ["pg_dump", self.url, "-f", dump_path]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        logging.debug(result)
+
+        if result.returncode == 0:
+            logging.info(f'Dump successful: {dump_path}')
+            cmd = ["cat", dump_path]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            logging.debug(result.stdout)
+        else:
+            logging.info(f'Dump failed: {result.stderr}')

@@ -31,7 +31,7 @@ HOST = os.getenv('db_host')
 PORT = os.getenv('db_port')
 USER = os.getenv('db_user')
 PASS = os.getenv('db_password')
-db_url = f'postgresql+psycopg2://{USER}:{PASS}@{HOST}:{PORT}/{DB}'
+db_url = f'postgresql://{USER}:{PASS}@{HOST}:{PORT}/{DB}'
 db_url = os.getenv('DATABASE_URL', db_url)
 logging.debug(db_url)
 database = Database(db_url)
@@ -39,12 +39,17 @@ database = Database(db_url)
 SP = int(os.getenv('start_page_number'))
 EP = int(os.getenv('end_page_number'))
 feeder = Feeder(networker, start_page=SP, end_page=EP, database=database)
-# feeder.run()
+
+scheduler = Scheduler()
 
 START_HOURS = int(os.getenv('start_hours'))
 START_MINUTES = int(os.getenv('start_minutes'))
-scheduler = Scheduler()
 scheduler.add_daily_job(feeder.run, hours=START_HOURS, minutes=START_MINUTES)
+
+DUMP_HOURS = int(os.getenv('dump_hours'))
+DUMP_MINUTES = int(os.getenv('dump_minutes'))
+scheduler.add_daily_job(database.dump, hours=DUMP_HOURS, minutes=DUMP_MINUTES)
+
 scheduler.start()
 
 # TODO asyncio
