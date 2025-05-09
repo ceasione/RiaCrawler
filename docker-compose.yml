@@ -1,0 +1,28 @@
+
+version: '3'
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://olvr:rgidji9457fgj_od8@db:5432/mydatabase
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+
+
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: olvr
+      POSTGRES_PASSWORD: rgidji9457fgj_od8
+      POSTGRES_DB: mydatabase
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
