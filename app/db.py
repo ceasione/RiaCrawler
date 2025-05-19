@@ -35,15 +35,18 @@ class Ticket(Base):
         super().__init__()
         self.id = dto.hash
         self.url = dto.ad_url
-        self.title = dto.title if dto.title else None
-        self.price_usd = dto.price_usd if dto.price_usd else None
-        self.odometer = dto.odometer if dto.odometer else None
-        self.username = getattr(dto, 'username', None)  # dto.username if dto.username else None
-        self.phone_number = str(dto.phone_number[0]) if dto.phone_number else None
-        self.image_url = dto.image_url if dto.image_url else None
-        self.images_count = dto.images_count if dto.images_count else None
-        self.car_number = getattr(dto, 'car_number', None)  # dto.car_number if dto.car_number else None
-        self.car_vin = dto.car_vin if dto.car_vin else None
+        self.title = getattr(dto, 'title', None)
+        self.price_usd = getattr(dto, 'price_usd', None)
+        self.odometer = getattr(dto, 'odometer', None)
+        self.username = getattr(dto, 'username', None)
+        try:
+            self.phone_number = str(getattr(dto, 'phone_number', None)[0])
+        except (TypeError, IndexError):
+            self.phone_number = None
+        self.image_url = getattr(dto, 'image_url', None)
+        self.images_count = getattr(dto, 'images_count', None)
+        self.car_number = getattr(dto, 'car_number', None)
+        self.car_vin = getattr(dto, 'car_vin', None)
         self.datetime_found = dto.datetime_found
 
 
@@ -61,7 +64,7 @@ class Database:
             with self.Session() as session:
                 session.add(ticket)
                 session.commit()
-            logging.info(f'Succesfully saved: {dto.title}')
+            logging.info(f'Succesfully saved: {dto.chart} {dto.title}')
         except IntegrityError:
             logging.warning(f'Duplicate ignored: {dto.title}')
 

@@ -17,7 +17,9 @@ log_levels = {
     "ERROR": logging.ERROR,
     "CRITICAL": logging.CRITICAL
 }
-logging.basicConfig(level=log_levels[loglevel])
+logging.basicConfig(level=log_levels[loglevel],
+                    format='%(asctime)s.%(msecs)03d - %(levelname)s - %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
 logging.info(f'loglevel is {loglevel}')
 
 USER_AGENT = os.getenv('User-Agent')
@@ -38,7 +40,8 @@ database = Database(db_url)
 
 SP = int(os.getenv('start_page_number'))
 EP = int(os.getenv('end_page_number'))
-feeder = Feeder(networker, start_page=SP, end_page=EP, database=database)
+batch_size = int(os.getenv('async_batch_size'))
+feeder = Feeder(networker, start_page=SP, end_page=EP, database=database, async_batch_size=batch_size)
 
 scheduler = Scheduler()
 
@@ -51,5 +54,3 @@ DUMP_MINUTES = int(os.getenv('dump_minutes'))
 scheduler.add_daily_job(database.dump, hours=DUMP_HOURS, minutes=DUMP_MINUTES)
 
 scheduler.start()
-
-# TODO asyncio

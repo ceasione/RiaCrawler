@@ -1,6 +1,9 @@
 
 import requests
 import aiohttp
+import asyncio
+import random
+import logging
 
 
 class Networker:
@@ -12,7 +15,6 @@ class Networker:
                  sessid_short='9PNl1E33Q7-pQgjJLDEUgpXO0pJSAFsn'):
 
         self.cookies = {
-            'Path': '/',
             'chk': '1',
             '__utmc': '79960839',
             '__utmz': '79960839.1746721241.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none)',
@@ -80,7 +82,7 @@ class Networker:
 
     def get_ticket_page(self, url):
 
-        return requests.get(url, cookies=self.cookies, headers=self.headers)
+        return requests.get(url, cookies=self.cookies, headers=self.headers).text
 
     def get_phone(self, _id, _hash):
         params = {
@@ -88,18 +90,33 @@ class Networker:
             'expires': '2592000',
         }
         return requests.get(f'https://auto.ria.com/users/phones/{_id}',
-                            params=params, cookies=self.cookies, headers=self.headers)
+                            params=params, cookies=self.cookies, headers=self.headers).text
+
+    @staticmethod
+    async def do_random_sleep():
+        seconds = random.uniform(0.25, 0.5)
+        logging.debug(f' Started random wait for {seconds.__round__(2)} secs')
+        await asyncio.sleep(seconds)
+        logging.debug(f'Finished random wait for {seconds.__round__(2)} secs')
 
     async def get_ticket_page_async(self, url):
+        await self.do_random_sleep()
+        logging.debug(f'Begin get_ticket_page_async({url})')
         async with aiohttp.ClientSession(cookies=self.cookies, headers=self.headers) as session:
             async with session.get(url) as response:
-                return await response.text()
+                ret = await response.text()
+                logging.debug(f'End get_ticket_page_async({url})')
+                return ret
 
     async def get_phone_async(self, _id, _hash):
         params = {
             'hash': _hash,
             'expires': '2592000',
         }
+        await self.do_random_sleep()
+        logging.debug(f'Begin get_phone_async({_id}, {_hash})')
         async with aiohttp.ClientSession(cookies=self.cookies, headers=self.headers) as session:
             async with session.get(f'https://auto.ria.com/users/phones/{_id}', params=params) as response:
-                return await response.text()
+                ret = await response.text()
+                logging.debug(f'End get_phone_async({_id}, {_hash})')
+                return ret
