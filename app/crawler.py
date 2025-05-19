@@ -76,8 +76,8 @@ class Crawler:
         _hash = self.soup.find('script', class_=re.compile(r"(js-user-secure-)\w+")).get('data-hash')
         _id = re.search(r'_\d+.html', self.URL).group()[1:-5]
 
+        raw = self.networker.get_phone(_id, _hash).text
         try:
-            raw = self.networker.get_phone(_id, _hash).text
             response = json.loads(raw)
         except json.JSONDecodeError as e:
             logging.error(f'Cannot parse response from secure phone API\n\n{raw}')
@@ -98,20 +98,13 @@ class Crawler:
         dto.images_count = _int
 
     def _car_number_extract(self, dto):
-        try:
-            dto.car_number = self.soup.find('span', class_='state-num').text.strip()[:10]
-        except AttributeError:
-            pass
+        dto.car_number = self.soup.find('span', class_='state-num').text.strip()[:10]
 
-    def _car_vin_extract(self, dto):
-        try:
-            dto.car_vin = self.soup.find('span', class_='vin-code').text.strip()
-        except AttributeError:
-            pass
-        try:
-            dto.car_vin = self.soup.find('span', class_='label-vin').text.strip()
-        except AttributeError:
-            pass
+    def _car_vin_attempt1_extract(self, dto):
+        dto.car_vin = self.soup.find('span', class_='vin-code').text.strip()
+
+    def _car_vin_attempt2_extract(self, dto):
+        dto.car_vin = self.soup.find('span', class_='label-vin').text.strip()
 
     # noinspection PyArgumentList
     def process(self):
@@ -126,12 +119,13 @@ class Crawler:
             self._image_url_extract,
             self._images_count_extract,
             self._car_number_extract,
-            self._car_vin_extract
+            self._car_vin_attempt1_extract,
+            self._car_vin_attempt2_extract
         ]
         for stage in pipeline:
             try:
                 stage(dto)
-            except (AttributeError, TypeError, IndexError):
+            except (AttributeError, TypeError, IndexError, json.JSONDecodeError):
                 logging.warning(f'Stage {stage} failed on {dto.ad_url}')
                 continue
         dto.finalize()
